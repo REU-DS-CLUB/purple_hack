@@ -1,14 +1,11 @@
-import gdown
-import pandas as pd
+def feature_drop(data):
+    
+    return data.copy().loc[:, data.nunique() != 1].drop(columns=["feature642", "feature756"], axis = 1) 
 
 
-def download_raw_data_from_drive_and_open_in_pandas(file_id="1cS6pE2ZD127iSVEiLRDzGd_b65J7GTd9",
-                                                    file_path="raw_data.parquet"):
-    # скачивает файл
-    gdown.download(id=file_id, output=file_path)
+def get_categorical_columns():
 
-    return pd.read_parquet(file_path)
-
+    pass
 
 def drop_ununique_features(data):
     # создает датафрейм только с колонками, содержащими больше одного уникального значения
@@ -39,3 +36,12 @@ def remove_highly_correlated_features(df, threshold=0.9):
 def get_categorical_columns():
 
     pass
+
+def download_raw_data_from_drive_and_open_in_pandas(file_id="1cS6pE2ZD127iSVEiLRDzGd_b65J7GTd9",
+                                                    file_path="raw_data.parquet"):
+    import pandas as pd
+    import gdown
+    # скачивает файл
+    gdown.download(id=file_id, output=file_path)
+
+    return pd.read_parquet(file_path)
