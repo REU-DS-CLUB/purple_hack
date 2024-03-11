@@ -1,6 +1,7 @@
 /Data
 /datasets
 /venv
-/__pycache__
-
+__pycache__
+EDA_lild1tz.ipynb
 /catboost_info
+/raw_data.parquettmzlr7sxtmp
