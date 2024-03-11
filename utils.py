@@ -1,7 +1,7 @@
 
-
 def feature_drop(data):
-    return data.copy().loc[:, data.nunique() != 1].drop(columns="feature756")
+    
+    return data.copy().loc[:, data.nunique() != 1].drop(columns=["feature756"], axis = 1) 
 
 
 
@@ -9,9 +9,19 @@ def get_categorical_columns():
     pass
 
 
+def get_df1():
+    file_path = "Data/train_ai_comp_final_dp.parquet"
+    pf = ParquetFile(file_path)
+    df = pf.to_pandas()
+    return df
 
-"""
-def remove_highly_correlated_features(df, threshold=0.9):
+
+def drop_ununique_features(data):
+    # создает датафрейм только с колонками, содержащими больше одного уникального значения
+    return data.copy().loc[:, data.nunique() != 1]
+
+
+def remove_highly_correlated_features(df, threshold=0.963):
 
     data = df.copy()
     data = data.sample(n = 100000)
@@ -33,6 +43,8 @@ def remove_highly_correlated_features(df, threshold=0.9):
     #df_reduced = df.drop(columns=features_to_remove)
 
     return features_to_remove
+
+
 """
 
 
@@ -89,11 +101,14 @@ def remove_highly_correlated_features(df, threshold=0.9, max_samples=100000):
 
 
 
+
 def download_raw_data_from_drive_and_open_in_pandas(file_id="1cS6pE2ZD127iSVEiLRDzGd_b65J7GTd9",
-                                                    file_path="raw_data.parquet"):
+                                                    file_path="Data/raw_data.parquet"):
     import pandas as pd
     import gdown
     # скачивает файл
     gdown.download(id=file_id, output=file_path)
 
     return pd.read_parquet(file_path)
+
+"""
