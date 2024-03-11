@@ -1,7 +1,14 @@
-/Data
-/datasets
 /venv
-__pycache__
+/__pycache__
 EDA_lild1tz.ipynb
 /catboost_info
 /raw_data.parquettmzlr7sxtmp
+/catboost_info
+
+/Data
+/datasets
+/raw_data.parquettmzlr7sxtmp
+
+EDA_Maria.ipynb
+EDA_lild1tz.ipynb
+.DS_Store
