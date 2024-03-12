@@ -3,20 +3,28 @@ def feature_drop(data):
 
 
 def get_categorical_columns(df):
-    s1 = set(df.columns[df.nunique() == 2]). \
-        union(set(df.columns[df[df.columns[~(df.nunique() == 2)]].nunique() / (df != 0).sum() * 100 <= 0.15]))
+    binar = set(df.columns[df.nunique() == 2])
+    cat_indexes = df[df.columns[~(df.nunique() == 2)]].nunique().div((df[df.columns[~(df.nunique() == 2)]] != 0).sum().values, axis=0) * 100 <= 0.15
 
-    s2 = set(df.columns[(df.max(axis=0) <= 500) &
-                        (df.min(axis=0) == 0) &
-                        (df.max(axis=0) != 1) &
-                        df.isin([1]).any() & \
-                        df.isin([2]).any() & \
-                        df.isin([3]).any() & \
-                        df.isin([4]).any() & \
-                        df.isin([5]).any()])
+    potentially_categorical = binar.union(set(cat_indexes[cat_indexes == True].index))
 
-    cat_cols = list(s1 - s2)
-    return cat_cols
+    # из потенциально категориальных попробуем вычесть колонки, которые могут быть численными
+
+
+    # TO DO поменять на признаки с равномерным ра
+    potentially_continuous = set(df.columns[(df.min(axis=0) == 0) & \
+                                (df.max(axis=0) != 1) & \
+                                df.isin([1]).any() & \
+                                df.isin([2]).any() & \
+                                df.isin([3]).any() & \
+                                df.isin([4]).any() & \
+                                df.isin([5]).any() & \
+                                (df.nunique() <= 500)])
+
+    cat_cols = list(potentially_categorical - potentially_continuous)
+    cat_features_tmp = list(set(cat_cols) - set(['feature488', 'feature506', 'feature475', 'feature474', 'feature559', 'feature560', 'feature553']))
+
+    return cat_features_tmp
 
 
 def get_df1():
