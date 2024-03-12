@@ -1,91 +1,94 @@
 
 
 def feature_drop(data):
-    return data.copy().loc[:, data.nunique() != 1].drop(columns="feature756")
+    return data.copy().loc[:, data.nunique() != 1].drop(columns=["feature756", "feature642"])
 
 
+def get_categorical_columns(df):
+    s1 = set(df.columns[df.nunique() == 2]).\
+    union(set(df.columns[df[df.columns[~(df.nunique() == 2)]].nunique() / (df != 0).sum() * 100 <= 0.15]))
 
-def get_categorical_columns():
-    pass
+    s2 = set(df.columns[(df.max(axis=0) <= 500) &
+                (df.min(axis=0) == 0) &
+                (df.max(axis=0) != 1) & 
+                    df.isin([1]).any() & \
+                    df.isin([2]).any() & \
+                    df.isin([3]).any() & \
+                    df.isin([4]).any() & \
+                    df.isin([5]).any()])
 
-
-
-"""
-def remove_highly_correlated_features(df, threshold=0.9):
-
-    data = df.copy()
-    data = data.sample(n = 100000)
-    corr_matrix = data.corr().abs()
-
-    # инициализируем множество для хранения индексов признаков, которые нужно удалить
-    features_to_remove = set()
-
-    # проходимся по всем элементам матрицы корреляции
-    for i in range(len(corr_matrix.columns)):
-        for j in range(i + 1, len(corr_matrix.columns)):
-            # если корреляция между двумя столбцами выше заданного порога
-            if corr_matrix.iloc[i, j] > threshold:
-                # определяем, какой из двух признаков удалить
-                colname = corr_matrix.columns[j]
-                features_to_remove.add(colname)
-
-    # удаляем признаки
-    #df_reduced = df.drop(columns=features_to_remove)
-
-    return features_to_remove
-"""
+    cat_cols = list(s1 - s2)
+    return cat_cols
 
 
-import pandas as pd
+def remove_highly_correlated_features(X_train, shap_df, threshold=0.9):
+    import pandas as pd
+    import numpy as np
 
-def remove_highly_correlated_features(df, threshold=0.9, max_samples=100000):
-    # Создание копии DataFrame для предотвращения изменений в оригинале
-    df_copy = df.copy()
-
-    # Если размер DataFrame больше максимального количества образцов, используем случайную выборку
-    if len(df_copy) > max_samples:
-        df_copy = df_copy.sample(n=max_samples, random_state=1)
-
-    # Вычисление матрицы корреляции
-    corr_matrix = df_copy.corr().abs()
-
-    # Идентификация колонок, которые не должны удаляться
-    protected_columns = ["target", 'id']
-
-    # Список колонок для удаления
-    columns_to_remove = []
-
-    for i in range(len(corr_matrix.columns)):
-        for j in range(i+1, len(corr_matrix.columns)):
-            col_name_i = corr_matrix.columns[i]
-            col_name_j = corr_matrix.columns[j]
-
-            # Проверка, не являются ли обе колонки защищенными
-            if col_name_i in protected_columns or col_name_j in protected_columns:
-                continue
-
-            # Если корреляция между колонками выше порога
-            if corr_matrix.iloc[i, j] >= threshold:
-                # Сравнение корреляции колонок с целевой переменной
-                correlation_with_target_i = corr_matrix.loc[col_name_i, "target"]
-                correlation_with_target_j = corr_matrix.loc[col_name_j, "target"]
-
-                # Удаление колонки с меньшей корреляцией с целевой переменной
-                if correlation_with_target_i < correlation_with_target_j:
-                    if col_name_i not in columns_to_remove and col_name_i not in protected_columns:
-                        columns_to_remove.append(col_name_i)
-                else:
-                    if col_name_j not in columns_to_remove and col_name_j not in protected_columns:
-                        columns_to_remove.append(col_name_j)
-
-    return columns_to_remove
-
+    df_copy = X_train.copy()
     
-    # Удаляем высококоррелированные признаки, выбранные к удалению
+    # Если размер данных больше 100000 строк, делаем выборку
+    if len(df_copy) > 100000:
+        df_sample = df_copy.sample(n=100000, random_state=1)
+    else:
+        df_sample = df_copy
     
+
+    corr_matrix = df_sample.corr().abs()
+    
+    # Получаем пары фич с высокой корреляцией
+    high_corr_var=np.where(corr_matrix>threshold)
+    high_corr_var=[(corr_matrix.columns[x],corr_matrix.columns[y]) for x,y in zip(*high_corr_var) if x!=y and x<y]
+    
+    # Подготавливаем список фич для удаления
+    features_to_remove = []
+    
+    for feature_a, feature_b in high_corr_var:
+        # Получаем SHAP значения для каждой фичи
+        shap_a = shap_df.loc[shap_df['feature'] == feature_a, 'shap_importance'].values[0]
+        shap_b = shap_df.loc[shap_df['feature'] == feature_b, 'shap_importance'].values[0]
+        
+        # Удаляем фичу с меньшим SHAP значением
+        if shap_a < shap_b:
+            features_to_remove.append(feature_a)
+        else:
+            features_to_remove.append(feature_b)
+    
+    # Удаляем дубликаты в списке фич для удаления
+    features_to_remove = list(set(features_to_remove))
+    
+    # Возвращаем обновлённый DataFrame без удалённых фич
     return features_to_remove
 
+def get_shap_feature(X_train, y_train, X_val, classifiers):
+    import numpy as np
+    import pandas as pd
+    import shap
 
+    # Список для хранения результатов по каждой модели
+    models_shap_values = []
+
+    for classifier in classifiers:
+        classifier.fit(X_train, y_train)
+        X_sample = shap.utils.sample(X_train, 10000) # Выборка из 100 наблюдений
+        explainer = shap.TreeExplainer(classifier)
+        shap_values = explainer.shap_values(X_sample)
+        
+        # Создаем DataFrame с SHAP значениями и фильтруем значимые признаки
+        feature_importance = pd.DataFrame({
+            'feature': X_train.columns,
+            'shap_importance': np.abs(shap_values).mean(axis=0)
+        }).query("shap_importance > 0")
+
+        # Усредняем оставшиеся SHAP значения для каждой фичи
+        feature_importance = feature_importance.groupby('feature', as_index=False).mean()
+
+        models_shap_values.append(feature_importance)
+
+    # Объединяем SHAP значения из всех моделей
+    final_shap_df = pd.concat(models_shap_values).groupby('feature', as_index=False).mean()
+
+    return final_shap_df
 
 
 
