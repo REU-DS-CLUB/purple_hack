@@ -7,6 +7,7 @@ def get_categorical_columns():
 
     pass
 
+
 def drop_ununique_features(data):
     # создает датафрейм только с колонками, содержащими больше одного уникального значения
     return data.copy().loc[:, data.nunique() != 1]
@@ -33,15 +34,11 @@ def remove_highly_correlated_features(df, threshold=0.9):
     return df_reduced
 
 
-def get_categorical_columns():
-
-    pass
-
 def download_raw_data_from_drive_and_open_in_pandas(file_id="1cS6pE2ZD127iSVEiLRDzGd_b65J7GTd9",
-                                                    file_path="raw_data.parquet"):
+                                                    file_path="Data/train_ai_comp_final_dp.parquet"):
     import pandas as pd
     import gdown
     # скачивает файл
     gdown.download(id=file_id, output=file_path)
 
-    return pd.read_parquet(file_path)
+    return pd.read_parquet(file_path, index='id')
