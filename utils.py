@@ -1,5 +1,5 @@
 def feature_drop(data):
-    return data.copy().loc[:, data.nunique() != 1]
+    return data.copy().loc[:, data.nunique() != 1].drop(columns=["feature756", "feature642"])
     
 
 
@@ -25,6 +25,7 @@ def get_categorical_columns(df):
     cat_cols = list(potentially_categorical - potentially_continuous)
     return cat_cols
 
+
 def get_df1():
 
     file_path = "Data/train_ai_comp_final_dp.parquet"
@@ -40,39 +41,40 @@ def remove_highly_correlated_features(X_train, shap_df, threshold=0.9):
     import numpy as np
 
     df_copy = X_train.copy()
-    
+
     # Если размер данных больше 100000 строк, делаем выборку
     if len(df_copy) > 100000:
         df_sample = df_copy.sample(n=100000, random_state=1)
     else:
         df_sample = df_copy
-    
 
     corr_matrix = df_sample.corr().abs()
-    
+
     # Получаем пары фич с высокой корреляцией
-    high_corr_var=np.where(corr_matrix>threshold)
-    high_corr_var=[(corr_matrix.columns[x],corr_matrix.columns[y]) for x,y in zip(*high_corr_var) if x!=y and x<y]
-    
+    high_corr_var = np.where(corr_matrix > threshold)
+    high_corr_var = [(corr_matrix.columns[x], corr_matrix.columns[y]) for x, y in zip(*high_corr_var) if
+                     x != y and x < y]
+
     # Подготавливаем список фич для удаления
     features_to_remove = []
-    
+
     for feature_a, feature_b in high_corr_var:
         # Получаем SHAP значения для каждой фичи
         shap_a = shap_df.loc[shap_df['feature'] == feature_a, 'shap_importance'].values[0]
         shap_b = shap_df.loc[shap_df['feature'] == feature_b, 'shap_importance'].values[0]
-        
+
         # Удаляем фичу с меньшим SHAP значением
         if shap_a < shap_b:
             features_to_remove.append(feature_a)
         else:
             features_to_remove.append(feature_b)
-    
+
     # Удаляем дубликаты в списке фич для удаления
     features_to_remove = list(set(features_to_remove))
-    
+
     # Возвращаем обновлённый DataFrame без удалённых фич
     return features_to_remove
+
 
 def get_shap_feature(X_train, y_train, X_val, classifiers):
     import numpy as np
@@ -84,10 +86,10 @@ def get_shap_feature(X_train, y_train, X_val, classifiers):
 
     for classifier in classifiers:
         classifier.fit(X_train, y_train)
-        X_sample = shap.utils.sample(X_train, 10000) # Выборка из 100 наблюдений
+        X_sample = shap.utils.sample(X_train, 10000)  # Выборка из 100 наблюдений
         explainer = shap.TreeExplainer(classifier)
         shap_values = explainer.shap_values(X_sample)
-        
+
         # Создаем DataFrame с SHAP значениями и фильтруем значимые признаки
         feature_importance = pd.DataFrame({
             'feature': X_train.columns,
@@ -105,7 +107,6 @@ def get_shap_feature(X_train, y_train, X_val, classifiers):
     return final_shap_df
 
 
-
 def download_raw_data_from_drive_and_open_in_pandas(file_id="1cS6pE2ZD127iSVEiLRDzGd_b65J7GTd9",
                                                     file_path="Data/raw_data.parquet"):
     import pandas as pd
@@ -114,4 +115,3 @@ def download_raw_data_from_drive_and_open_in_pandas(file_id="1cS6pE2ZD127iSVEiLR
     gdown.download(id=file_id, output=file_path)
 
     return pd.read_parquet(file_path)
-
