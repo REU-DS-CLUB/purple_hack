@@ -1,7 +1,8 @@
 
-
 def feature_drop(data):
     return data.copy().loc[:, data.nunique() != 1].drop(columns=["feature756", "feature642"])
+    
+
 
 
 def get_categorical_columns(df):
@@ -20,6 +21,39 @@ def get_categorical_columns(df):
     cat_cols = list(s1 - s2)
     return cat_cols
 
+def get_df1():
+    file_path = "Data/train_ai_comp_final_dp.parquet"
+    pf = ParquetFile(file_path)
+    df = pf.to_pandas()
+    return df
+
+"""
+def remove_highly_correlated_features(df, threshold=0.9):
+
+    data = df.copy()
+    data = data.sample(n = 100000)
+    corr_matrix = data.corr().abs()
+
+    # инициализируем множество для хранения индексов признаков, которые нужно удалить
+    features_to_remove = set()
+
+    # проходимся по всем элементам матрицы корреляции
+    for i in range(len(corr_matrix.columns)):
+        for j in range(i + 1, len(corr_matrix.columns)):
+            # если корреляция между двумя столбцами выше заданного порога
+            if corr_matrix.iloc[i, j] > threshold:
+                # определяем, какой из двух признаков удалить
+                colname = corr_matrix.columns[j]
+                features_to_remove.add(colname)
+
+    # удаляем признаки
+    #df_reduced = df.drop(columns=features_to_remove)
+
+    return features_to_remove
+"""
+
+
+import pandas as pd
 
 def remove_highly_correlated_features(X_train, shap_df, threshold=0.9):
     import pandas as pd
@@ -93,10 +127,11 @@ def get_shap_feature(X_train, y_train, X_val, classifiers):
 
 
 def download_raw_data_from_drive_and_open_in_pandas(file_id="1cS6pE2ZD127iSVEiLRDzGd_b65J7GTd9",
-                                                    file_path="raw_data.parquet"):
+                                                    file_path="Data/raw_data.parquet"):
     import pandas as pd
     import gdown
     # скачивает файл
     gdown.download(id=file_id, output=file_path)
 
     return pd.read_parquet(file_path)
+
