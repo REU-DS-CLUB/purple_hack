@@ -1,17 +1,18 @@
 def feature_drop(data):
     return data.copy().loc[:, data.nunique() != 1].drop(columns=["feature756", "feature642"])
+    
+
 
 
 def get_categorical_columns(df):
     binar = set(df.columns[df.nunique() == 2])
     cat_indexes = df[df.columns[~(df.nunique() == 2)]].nunique().div((df[df.columns[~(df.nunique() == 2)]] != 0).sum().values, axis=0) * 100 <= 0.15
 
+
     potentially_categorical = binar.union(set(cat_indexes[cat_indexes == True].index))
 
     # из потенциально категориальных попробуем вычесть колонки, которые могут быть численными
 
-
-    # TO DO поменять на признаки с равномерным ра
     potentially_continuous = set(df.columns[(df.min(axis=0) == 0) & \
                                 (df.max(axis=0) != 1) & \
                                 df.isin([1]).any() & \
@@ -27,39 +28,15 @@ def get_categorical_columns(df):
     return cat_features_tmp
 
 
+
 def get_df1():
+
     file_path = "Data/train_ai_comp_final_dp.parquet"
     pf = ParquetFile(file_path)
     df = pf.to_pandas()
     return df
 
 
-"""
-def remove_highly_correlated_features(df, threshold=0.9):
-
-    data = df.copy()
-    data = data.sample(n = 100000)
-    corr_matrix = data.corr().abs()
-
-    # инициализируем множество для хранения индексов признаков, которые нужно удалить
-    features_to_remove = set()
-
-    # проходимся по всем элементам матрицы корреляции
-    for i in range(len(corr_matrix.columns)):
-        for j in range(i + 1, len(corr_matrix.columns)):
-            # если корреляция между двумя столбцами выше заданного порога
-            if corr_matrix.iloc[i, j] > threshold:
-                # определяем, какой из двух признаков удалить
-                colname = corr_matrix.columns[j]
-                features_to_remove.add(colname)
-
-    # удаляем признаки
-    #df_reduced = df.drop(columns=features_to_remove)
-
-    return features_to_remove
-"""
-
-import pandas as pd
 
 
 def remove_highly_correlated_features(X_train, shap_df, threshold=0.9):
