@@ -25,7 +25,7 @@
 
 | Участник          | bio           | Контакты                       |
 |-------------------|---------------|--------------------------------|
-| Пашинская Пелагея | Team lead     |                                |
-|                   |               |                                |
-|                   |               |                                |
+| Пашинская Пелагея | Team lead     | https://t.me/polyanka003                               |
+| Морозова Мария                  | Analyst              | https://t.me/kheydelberg                               |
+| Иванов Александр                  | ML              | https://t.me/lild1tz                               |
 | Мичурин Артем     | Data Engineer | https://t.me/amichurin_rubbles |
