@@ -11,5 +11,7 @@ EDA_Maria.ipynb
 EDA_lild1tz.ipynb
 .DS_Store
 baseline.ipynb
-__pycache__\utils.cpython-311.pyc
+/__pycache__
 /models
+/AutogluonModels
+/submit_files
