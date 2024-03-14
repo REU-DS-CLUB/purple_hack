@@ -1,32 +1,38 @@
 def feature_drop(data):
     return data.copy().loc[:, data.nunique() != 1].drop(columns=["feature756", "feature642"])
-    
 
 
+def get_categorical_columns(df, is_binar=False, is_potential=False):
+    import numpy as np
 
-def get_categorical_columns(df):
-    binar = set(df.columns[df.nunique() == 2])
-    cat_indexes = df[df.columns[~(df.nunique() == 2)]].nunique().div((df[df.columns[~(df.nunique() == 2)]] != 0).sum().values, axis=0) * 100 <= 0.15
+    # найдем бинарные колонки
+    binar = list(df.columns[df.nunique() == 2])
 
+    cat_indexes = df[df.columns[~(df.nunique() == 2)]].nunique().div(
+        (df[df.columns[~(df.nunique() == 2)]] != 0).sum().values, axis=0) * 100 <= 0.15
+    potentially_categorical = set(cat_indexes[cat_indexes == True].index)
 
-    potentially_categorical = binar.union(set(cat_indexes[cat_indexes == True].index))
+    # potentially_categorical = binar.union(set(cat_indexes[cat_indexes == True].index))
 
     # из потенциально категориальных попробуем вычесть колонки, которые могут быть численными
+    potentially_continuous = set(df.columns[df.isin([0]).any() & \
+                                            df.isin([1]).any() & \
+                                            df.isin([2]).any() & \
+                                            df.isin([3]).any() & \
+                                            df.isin([4]).any() & \
+                                            (df.nunique() <= 500)])
 
-    potentially_continuous = set(df.columns[(df.min(axis=0) == 0) & \
-                                (df.max(axis=0) != 1) & \
-                                df.isin([1]).any() & \
-                                df.isin([2]).any() & \
-                                df.isin([3]).any() & \
-                                df.isin([4]).any() & \
-                                df.isin([5]).any() & \
-                                (df.nunique() <= 500)])
+    cat_cols = potentially_categorical - potentially_continuous
+    cat_cols_final = cat_cols.difference(
+        set(df.columns[(df.max() / df.quantile(q=0.9) < np.inf) & (df.max() / df.quantile(q=0.9) > 3)]))
 
-    cat_cols = list(potentially_categorical - potentially_continuous)
-    cat_features_tmp = list(set(cat_cols) - set(['feature488', 'feature506', 'feature475', 'feature474', 'feature559', 'feature560', 'feature553']))
+    if is_binar:
+        return binar
 
-    return cat_features_tmp
+    if is_potential:
+        return potentially_categorical
 
+    return cat_cols_final
 
 
 def get_df1():
@@ -35,8 +41,6 @@ def get_df1():
     pf = ParquetFile(file_path)
     df = pf.to_pandas()
     return df
-
-
 
 
 def remove_highly_correlated_features(X_train, shap_df, threshold=0.9):
